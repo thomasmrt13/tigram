@@ -1,0 +1,22 @@
+# node modules
+node_modules/
+
+# environnement
+.env
+
+# logs
+logs/
+*.log
+npm-debug.log*
+
+# système
+.DS_Store
+Thumbs.db
+
+# coverage/test
+coverage/
+*.lcov
+
+# production builds (si tu build avec esbuild ou ts)
+dist/
+build/
