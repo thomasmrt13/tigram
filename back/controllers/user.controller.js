@@ -1,5 +1,5 @@
 const UserModel = require('../models/user.model');
-
+const bcrypt = require('bcryptjs');
 
 // Get all users
 module.exports.getUsers = async (req, res) => {
@@ -22,28 +22,37 @@ module.exports.setUser = async (req, res) => {
             return res.status(400).json({ message: 'All fields are required' });
         }
 
+        // Check if the username or email already exists
+        const existingUser = await UserModel.findOne({ $or: [{ email }, { username }] });
+        if (existingUser) {
+            return res.status(400).json({ message: 'Email ou nom d’utilisateur déjà utilisé.' });
+        }
+
+        // Hash password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
         // Create a new user instance
         const newUser = new UserModel({
             firstName,
             lastName,
             username,
             email,
-            password,
+            password: hashedPassword,
             dateOfBirth,
             description
         });
 
         await newUser.save();
 
-        res.status(201).json({ message: 'User created successfully', user: newUser });
-    } catch (error) {
-        if (error.code === 11000) {
-            return res.status(400).json({ message: 'Username or email already exists' });
-        } else {
+        // Remove password for the response
+        const userWithoutPassword = newUser.toObject();
+        delete userWithoutPassword.password;
 
-            console.error('Error creating user:', error);
-            res.status(500).json({ message: 'Server error' });
-        }
+        res.status(201).json({ message: 'User created successfully', user: userWithoutPassword });
+    } catch (error) {
+        console.error('Error creating user:', error);
+        res.status(500).json({ message: 'Server error' });
     }   
 };
 
